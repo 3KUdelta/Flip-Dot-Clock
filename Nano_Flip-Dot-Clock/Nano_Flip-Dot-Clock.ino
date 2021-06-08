@@ -4,8 +4,8 @@
 //
 // c by Rainer Radow, 30171 Hannover, Germany
 // radow.org
-//
-// Pairing file on ESP32: ESP32_wwFlipGFX-scrolling_clock_ng.ino
+// This file is for your Nano.
+// Pairing file on ESP32: ESP32_Flip-Dot-Clock.ino
 //
 // June 2021: addons by Marc Stähli
 // - precise time fetch via NTP on connected ESP32
