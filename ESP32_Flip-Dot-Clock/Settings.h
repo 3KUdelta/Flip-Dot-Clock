@@ -1,7 +1,7 @@
 
 // NTP settings ************************************************************************************************************
 
-#define NTP_SERVER "ch.pool.ntp.org"                         // for NTP Server - us any NPT server nearby
+#define NTP_SERVER "ch.pool.ntp.org"                         // for NTP Server - use any NPT server nearby
 #define TZ 0                                                 // grabbing UTC from time server
 #define TZ_SEC ((TZ)*3600)                                   // do not change this
 
