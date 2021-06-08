@@ -4,14 +4,16 @@
 //
 // c by Rainer Radow, 30171 Hannover, Germany
 // radow.org
-//
-// Pairing file on Nano: Nano_wwFlipGFX-scrolling_clock_ng.ino
+// This file is for your ESP32
+// Pairing file on Nano: Nano_Flip-Dot-Clock.ino
 //
 // June 2021: addons by Marc Stähli
 // - precise time fetch via NTP on connected ESP32
 // - automatic DST conversion (see Settings.h) for any place in the world
 // - serial transfer of data from this sketch
 // - sending status messages -> 1 = success, 2 = no WiFi, 3 = no NTP
+//
+// At startup the ESP32 keeps the (blue) LED on as long as there is no WiFi connection.
 //
 // To set your WiFi credentials for the first time or if WiFi changes:
 //   Open WLAN and connect to "FlipDot_Clock_AP"
@@ -73,7 +75,7 @@ void loop() {
 
   t2 = millis();
   if ( t2 >= t1 + 60000) {                                    // get every minute NTP time
-    // to avoid overloading NTP servers
+                                                              // to avoid overloading NTP servers
     t1 = t2;
     digitalWrite(2, HIGH);                                    // indicate transmission with LED
     if (get_NTP_time()) {
