@@ -6,6 +6,7 @@
 // radow.org
 // This file is for your ESP32
 // Pairing file on Nano: Nano_Flip-Dot-Clock.ino
+// or for the silent version use: Nano_Flip-Dot-Clock_silent.ino
 //
 // June 2021: addons by Marc Stähli
 // - precise time fetch via NTP on connected ESP32
@@ -34,10 +35,12 @@
 
 WiFiManager wm;                                    // initializing WiFi Manager
 WiFiUDP udp;                                       // WiFi UDP initialization for NTP
-EasyNTPClient ntpClient(udp, NTP_SERVER);          // NTP initialization
+EasyNTPClient ntpClient(udp, NTP_SERVER, TZ_SEC);  // NTP initialization
 AsciiMassagePacker outbound;                       // https://i2.wp.com/randomnerdtutorials.com/wp-content/uploads/2018/08/ESP32-DOIT-DEVKIT-V1-Board-Pinout-36-GPIOs-updated.jpg?quality=100&strip=all&ssl=1Serial transmission initialization
 
 long t1, t2;
+long epochtime = 0;                                // Time variables
+long old_time = 0;
 
 void setup() {
 
@@ -74,8 +77,7 @@ void setup() {
 void loop() {
 
   t2 = millis();
-  if ( t2 >= t1 + 60000) {                                    // get every minute NTP time
-                                                              // to avoid overloading NTP servers
+  if ( t2 >= t1 + 60000) {                                    // get every minute NTP time to avoid overloading NTP servers
     t1 = t2;
     digitalWrite(2, HIGH);                                    // indicate transmission with LED
     if (get_NTP_time()) {
@@ -86,7 +88,7 @@ void loop() {
     }
     else {
       outbound.beginPacket("update");                         // package identifier
-      outbound.addByte(3);                                    // no NTP message
+      outbound.addByte(2);                                    // no WiFi connection
       outbound.addLong(0);                                    // no time update - send 0
       outbound.streamPacket(&Serial2);                        // send package via Serial2
     }
@@ -96,7 +98,6 @@ void loop() {
 
 bool get_NTP_time() {
 
-  static long epochtime_old;
   bool wificonnection = 1;
 
   if (WiFi.status() != WL_CONNECTED) {
@@ -106,27 +107,31 @@ bool get_NTP_time() {
   if (wificonnection)
   {
     Serial.println("---> Now reading time from NTP Server");
-    long epochtime = ntpClient.getUnixTime();
-    
-    if (epochtime <= epochtime_old) {
-      Serial.println("NTP read not successul!");
+    epochtime = ntpClient.getUnixTime();
+    if (epochtime <= old_time) {
+      Serial.println("NTP reading error!");
+      Serial.print("Value read: ");
+      Serial.println(epochtime);
       return 0;
     }
-    setTime(epochtime);                                       // set systemtime in ESP32 to UTC fetched from NTP
-    Serial.println("NTP read success");
-    Serial.print("Epochtime raw: ");
-    Serial.print(hour(now()));
-    Serial.print(":");
-    Serial.println(minute(now()));
-    Serial.print("Local time: ");
-    Serial.print(hour(CE.toLocal(now(), &tcr)));
-    Serial.print(":");
-    Serial.println(minute(CE.toLocal(now(), &tcr)));
-    epochtime_old = epochtime;
-    return 1;
+    else {
+      Serial.println(epochtime);
+      setTime(epochtime);                        // set systemtime in ESP32 to UTC fetched from NTP
+      Serial.println("NTP read success");
+      Serial.print("UTC: ");
+      Serial.print(hour(now()));
+      Serial.print(":");
+      Serial.println(minute(now()));
+      Serial.print("Local time: ");
+      Serial.print(hour(CE.toLocal(now(), &tcr)));
+      Serial.print(":");
+      Serial.println(minute(CE.toLocal(now(), &tcr)));
+      old_time = epochtime;
+      return 1;
+    }
   }
   else {                                                     // something went wrong in fetching NTP time
-    Serial.println("NTP read not successul!");
+    Serial.println("NTP read not successul! No WiFi Connection.");
     return 0;
   }
 }
