@@ -1,9 +1,15 @@
 
 // NTP settings ************************************************************************************************************
 
-#define NTP_SERVER "ch.pool.ntp.org"                         // for NTP Server - use any NPT server nearby
-#define TZ 0                                                 // grabbing UTC from time server
+#define NTP_SERVER "europe.pool.ntp.org"                     // for NTP Server - use any NPT server nearby
+#define NTP_INTERVAL 60000                                   // interval time to read from NTP in ms (default: 60000)
+
+#define TZ 0                                                 // do not change this - grabbing UTC from time server 
 #define TZ_SEC ((TZ)*3600)                                   // do not change this
+
+//  REMARK:   It does not make sense to read from NTP servers faster than every 60 seconds. Don't spam these servers.
+//*********** The time read from NTP will be loaded into the ESP32 real time clock and this clock is precise enough to 
+//*********** keep the precise time for much longer than 60 seconds.
 
 // Timezone settings *******************************************************************************************************
 #include <Timezone.h>  // Calculating the right timezone including DST https://github.com/JChristensen/Timezone
