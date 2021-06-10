@@ -28,24 +28,22 @@
 #include "Settings.h"
 #include <WiFi.h>                           // WiFI
 #include <WiFiUdp.h>                        // For NTP Signal fetch
-#include <EasyNTPClient.h>                  // For NTP Signal read https://github.com/aharshac/EasyNTPClient
+#include <NTPClient.h>                      // For NTP time signal fetch https://github.com/arduino-libraries/NTPClient
 #include <TimeLib.h>                        // For converting NTP time https://github.com/PaulStalloffregen/Time.git
 #include <WiFiManager.h>                    // https://github.com/tzapu/WiFiManager
 #include <AsciiMassagePacker.h>             // https://github.com/SofaPirate/AsciiMassage
 
-WiFiManager wm;                                    // initializing WiFi Manager
-WiFiUDP udp;                                       // WiFi UDP initialization for NTP
-EasyNTPClient ntpClient(udp, NTP_SERVER, TZ_SEC);  // NTP initialization
-AsciiMassagePacker outbound;                       // https://i2.wp.com/randomnerdtutorials.com/wp-content/uploads/2018/08/ESP32-DOIT-DEVKIT-V1-Board-Pinout-36-GPIOs-updated.jpg?quality=100&strip=all&ssl=1Serial transmission initialization
+WiFiManager wm;                                                  // initializing WiFi Manager
+WiFiUDP udp;                                                     // WiFi UDP initialization for NTP
+NTPClient ntpClient(udp, NTP_SERVER, TZ_SEC, NTP_INTERVAL);      // NTP initialization
+AsciiMassagePacker outbound;                                     // transmission initialization
 
-long t1, t2;
-long epochtime = 0;                                // Time variables
-long old_time = 0;
+unsigned long interval;
 
 void setup() {
 
   Serial.begin(9600); while (!Serial); delay(200);
-  Serial2.begin(9600);                             // going low speed, simple data transmission
+  Serial2.begin(9600);                                           // going low speed, simple data transmission
 
   Serial.println();
   Serial.println("Starting Time Fetcher Flip-Dot Clock...");
@@ -57,7 +55,7 @@ void setup() {
   //************************************************************************************************
 
   wm.setConfigPortalBlocking(true);         // setiing WiFi manager to blocking mode
-  wm.setCaptivePortalEnable(true);          // setting WiFi manager to captive portal
+  wm.setCaptivePortalEnable(true);          // setting WiFi manager to activate captive portal
 
   WiFi.mode(WIFI_STA);                      // going online using Wifi Manager
   WiFi.hostname("Flip_Dot_Timefetcher");
@@ -71,68 +69,53 @@ void setup() {
   wm.autoConnect("FlipDot_Clock_AP");       // doing some magic: using WiFi manager (blocking mode)
   digitalWrite(2, LOW);                     // LED off because we are online
 
-  t1 = millis();                            // t1 is used to do timed NTP reading
+  ntpClient.begin();
+  interval = millis();
 }
 
 void loop() {
 
-  t2 = millis();
-  if ( t2 >= t1 + 60000) {                                    // get every minute NTP time to avoid overloading NTP servers
-    t1 = t2;
-    digitalWrite(2, HIGH);                                    // indicate transmission with LED
-    if (get_NTP_time()) {
-      outbound.beginPacket("update");                         // package identifier
-      outbound.addByte(1);                                    // successful NTP time fetch
-      outbound.addLong(CE.toLocal(now(), &tcr));              // time conversion to DST rules (see Settings.h)
-      outbound.streamPacket(&Serial2);                        // send package via Serial2
+  if (!ntpClient.update()) {
+    if (WiFi.status() != WL_CONNECTED) {
+      if (!wifi_reconnect()) {
+        digitalWrite(2, HIGH);                               // indicate transmission with LED
+        outbound.beginPacket("update");                      // package identifier
+        outbound.addByte(2);                                 // no WiFi connection
+        outbound.addLong(0);                                 // no time update - send 0
+        outbound.streamPacket(&Serial2);                     // send package via Serial2
+        digitalWrite(2, LOW);                                // End of transmission
+      }
     }
     else {
-      outbound.beginPacket("update");                         // package identifier
-      outbound.addByte(2);                                    // no WiFi connection
-      outbound.addLong(0);                                    // no time update - send 0
-      outbound.streamPacket(&Serial2);                        // send package via Serial2
+      digitalWrite(2, HIGH);                                   // indicate transmission with LED
+      outbound.beginPacket("update");                          // package identifier
+      outbound.addByte(3);                                     // no NTP connection
+      outbound.addLong(0);                                     // no time update - send 0
+      outbound.streamPacket(&Serial2);                         // send package via Serial2
+      digitalWrite(2, LOW);                                    // End of transmission
     }
-    digitalWrite(2, LOW);                                     // End of transmission
   }
-}
-
-bool get_NTP_time() {
-
-  bool wificonnection = 1;
-
-  if (WiFi.status() != WL_CONNECTED) {
-    wificonnection = wifi_reconnect();
-  }
-
-  if (wificonnection)
-  {
+  if (millis() - interval > NTP_INTERVAL) {
     Serial.println("---> Now reading time from NTP Server");
-    epochtime = ntpClient.getUnixTime();
-    if (epochtime <= old_time) {
-      Serial.println("NTP reading error!");
-      Serial.print("Value read: ");
-      Serial.println(epochtime);
-      return 0;
-    }
-    else {
-      Serial.println(epochtime);
-      setTime(epochtime);                        // set systemtime in ESP32 to UTC fetched from NTP
-      Serial.println("NTP read success");
-      Serial.print("UTC: ");
+    setTime(ntpClient.getEpochTime());                        // set systemtime in ESP32 to UTC fetched from NTP
+    Serial.println("NTP read success");
+
+    /*Serial.print("UTC: ");
       Serial.print(hour(now()));
       Serial.print(":");
       Serial.println(minute(now()));
       Serial.print("Local time: ");
       Serial.print(hour(CE.toLocal(now(), &tcr)));
       Serial.print(":");
-      Serial.println(minute(CE.toLocal(now(), &tcr)));
-      old_time = epochtime;
-      return 1;
-    }
-  }
-  else {                                                     // something went wrong in fetching NTP time
-    Serial.println("NTP read not successul! No WiFi Connection.");
-    return 0;
+      Serial.println(minute(CE.toLocal(now(), &tcr))); */
+
+    digitalWrite(2, HIGH);                                  // indicate transmission with LED
+    outbound.beginPacket("update");                         // package identifier
+    outbound.addByte(1);                                    // successful NTP time fetch
+    outbound.addLong(CE.toLocal(now(), &tcr));              // time conversion to DST rules (see Settings.h)
+    outbound.streamPacket(&Serial2);                        // send package via Serial2
+    digitalWrite(2, LOW);                                   // End of transmission
+    interval = millis();
   }
 }
 
@@ -152,12 +135,6 @@ bool wifi_reconnect() {
     i++;
     if (i > 20) {
       Serial.println("Could not connect to WiFi!");
-      digitalWrite(2, HIGH);                                 // indicate transmitting data
-      outbound.beginPacket("update");                        // package identifier
-      outbound.addByte(2);                                   // no WiFi message
-      outbound.addLong(0);                                   // no time update - send 0
-      outbound.streamPacket(&Serial2);                       // send package via Serial2
-      digitalWrite(2, LOW);                                  // LED off because we are online
       return 0;
     }
     Serial.print(".");
