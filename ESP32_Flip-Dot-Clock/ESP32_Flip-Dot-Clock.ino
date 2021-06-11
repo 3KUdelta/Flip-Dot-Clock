@@ -13,6 +13,7 @@
 // - automatic DST conversion (see Settings.h) for any place in the world
 // - serial transfer of data from this sketch
 // - sending status messages -> 1 = success, 2 = no WiFi, 3 = no NTP
+// - indicated on matrix: top left dot: no Wifi, top right dot: no NTP
 //
 // At startup the ESP32 keeps the (blue) LED on as long as there is no WiFi connection.
 //
@@ -75,46 +76,48 @@ void setup() {
 
 void loop() {
 
-  if (!ntpClient.update()) {
-    if (WiFi.status() != WL_CONNECTED) {
-      if (!wifi_reconnect()) {
-        digitalWrite(2, HIGH);                               // indicate transmission with LED
-        outbound.beginPacket("update");                      // package identifier
-        outbound.addByte(2);                                 // no WiFi connection
-        outbound.addLong(0);                                 // no time update - send 0
-        outbound.streamPacket(&Serial2);                     // send package via Serial2
-        digitalWrite(2, LOW);                                // End of transmission
-      }
+  if (millis() - interval > NTP_INTERVAL) {
+    if (ntpClient.update()) {
+      Serial.println("---> Now reading time from NTP Server");
+      setTime(ntpClient.getEpochTime());                        // set systemtime in ESP32 to UTC fetched from NTP
+      Serial.println("NTP read success");
+
+      /*Serial.print("UTC: ");
+        Serial.print(hour(now()));
+        Serial.print(":");
+        Serial.println(minute(now()));
+        Serial.print("Local time: ");
+        Serial.print(hour(CE.toLocal(now(), &tcr)));
+        Serial.print(":");
+        Serial.println(minute(CE.toLocal(now(), &tcr))); */
+
+      digitalWrite(2, HIGH);                                  // indicate transmission with LED
+      outbound.beginPacket("update");                         // package identifier
+      outbound.addByte(1);                                    // successful NTP time fetch
+      outbound.addLong(CE.toLocal(now(), &tcr));              // time conversion to DST rules (see Settings.h)
+      outbound.streamPacket(&Serial2);                        // send package via Serial2
+      digitalWrite(2, LOW);                                   // End of transmission
     }
     else {
-      digitalWrite(2, HIGH);                                   // indicate transmission with LED
-      outbound.beginPacket("update");                          // package identifier
-      outbound.addByte(3);                                     // no NTP connection
-      outbound.addLong(0);                                     // no time update - send 0
-      outbound.streamPacket(&Serial2);                         // send package via Serial2
-      digitalWrite(2, LOW);                                    // End of transmission
+      if (WiFi.status() != WL_CONNECTED) {
+        if (!wifi_reconnect()) {
+          digitalWrite(2, HIGH);                               // indicate transmission with LED
+          outbound.beginPacket("update");                      // package identifier
+          outbound.addByte(2);                                 // no WiFi connection
+          outbound.addLong(0);                                 // no time update - send 0
+          outbound.streamPacket(&Serial2);                     // send package via Serial2
+          digitalWrite(2, LOW);                                // End of transmission
+        }
+      }
+      else {
+        digitalWrite(2, HIGH);                                   // indicate transmission with LED
+        outbound.beginPacket("update");                          // package identifier
+        outbound.addByte(3);                                     // no NTP connection
+        outbound.addLong(0);                                     // no time update - send 0
+        outbound.streamPacket(&Serial2);                         // send package via Serial2
+        digitalWrite(2, LOW);                                    // End of transmission
+      }
     }
-  }
-  if (millis() - interval > NTP_INTERVAL) {
-    Serial.println("---> Now reading time from NTP Server");
-    setTime(ntpClient.getEpochTime());                        // set systemtime in ESP32 to UTC fetched from NTP
-    Serial.println("NTP read success");
-
-    /*Serial.print("UTC: ");
-      Serial.print(hour(now()));
-      Serial.print(":");
-      Serial.println(minute(now()));
-      Serial.print("Local time: ");
-      Serial.print(hour(CE.toLocal(now(), &tcr)));
-      Serial.print(":");
-      Serial.println(minute(CE.toLocal(now(), &tcr))); */
-
-    digitalWrite(2, HIGH);                                  // indicate transmission with LED
-    outbound.beginPacket("update");                         // package identifier
-    outbound.addByte(1);                                    // successful NTP time fetch
-    outbound.addLong(CE.toLocal(now(), &tcr));              // time conversion to DST rules (see Settings.h)
-    outbound.streamPacket(&Serial2);                        // send package via Serial2
-    digitalWrite(2, LOW);                                   // End of transmission
     interval = millis();
   }
 }
