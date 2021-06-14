@@ -8,14 +8,14 @@ Library & Hardware: Rainer Radow, radow.org
 [![ESP8266-World-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084116.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
 Features:
-- cool time display using unique Flip-Dot technology
+- Cool time display using unique Flip-Dot technology
 - Arduino Nano to control the display, ESP32 to do the online (WiFi, NTP) part
-- precise time fetch every minute via NTP on connected ESP32
+- Precise time fetch every minute via NTP on connected ESP32
 - RTC 3231 module in case of no WiFi available
-- automatic DST conversion (see Settings.h for ESP32) for any place in the world
-- serial transfer of data from ESP32 to Nano
-- sending status messages -> 1 = success, 2 = no WiFi, 3 = no NTP
-- Error messages: dot top left indicates no WiFi, dot top right indicates no NTP
+- Automatic DST conversion (see Settings.h for ESP32) for any place in the world
+- Serial transfer of data from ESP32 to Nano
+- Sending status messages -> 1 = success, 2 = no WiFi, 3 = no NTP
+- Status indication: dot top left indicates no WiFi, dot top right indicates no NTP
 - Switchable seconds blinking on the colon
 - Switchable time progress per minute
 - Super silent mode (if your wife does not like the flipping sound ;-))
@@ -42,5 +42,3 @@ Print the stand yourself: (https://)
 
 Serial transfer of precise time every minute.
 [![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/VID_20210608_193220%7E2.mov)](https://github.com/3KUdelta/Flip-Dot-Clock)
-
-
