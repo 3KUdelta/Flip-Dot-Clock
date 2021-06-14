@@ -28,7 +28,7 @@ My Build:
 - RTC 3231 module
 - Very fleixible library works with all sizes of displays and other brands such as Krüger
 
-Settings.h includes all individal settings. 
+Settings.h for the ESP32 includes all individal settings. 
 Including <Timezone.h> for calculating the right timezone including global DST settings (https://github.com/JChristensen/Timezone).
 
 Print the stand yourself: (https://)
