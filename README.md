@@ -29,8 +29,12 @@ Including <Timezone.h> for calculating the right timezone including global DST s
 
 Print the stand yourself: (https://)
 
-[![ESP8266-World-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084328.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
+[![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084328.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
-[![ESP8266-World-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084238.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
+[![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084238.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
-[![ESP8266-World-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084258.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
+[![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084258.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
+
+[![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/VID_20210608_193220%7E2.mp4)](https://github.com/3KUdelta/Flip-Dot-Clock)
+
+
