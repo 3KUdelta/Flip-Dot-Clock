@@ -3,7 +3,7 @@ Ultra precise and always up-to-date. Fun clock with Flip-Dots.
 
 Author: Marc Staehli, initial upload June 2021
 
-Library & Hardware: Rainer Radow, radow.org
+Hardware & Library: Rainer Radow, https://radow.org
 
 [![ESP8266-World-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084116.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
