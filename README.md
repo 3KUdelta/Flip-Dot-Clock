@@ -8,7 +8,7 @@ Library & Hardware: Rainer Radow, radow.org
 [![ESP8266-World-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084116.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
 Features:
-- Cool time display using unique Flip-Dot technology
+- Cool time display using unique Flip-Dot technology (salvaged from busses and other public transportation)
 - Arduino Nano to control the display, ESP32 to do the online (WiFi, NTP) part
 - Precise time fetch every minute via NTP on connected ESP32
 - RTC 3231 module in case of no WiFi available
