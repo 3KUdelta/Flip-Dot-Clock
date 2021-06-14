@@ -16,6 +16,7 @@ Features:
 - Error messages: dot top left indicates no WiFi, dot top right indicates no NTP
 - Switchable seconds blinking on the colon
 - Switchable time progress per minute
+- Super silent mode (if your wife does not like the flipping sound ;-))
 
 Build:
 - ESP32 Dev Kit 1.0 - using WiFi to get NTP Time
