@@ -20,12 +20,13 @@ Features:
 - Switchable time progress per minute
 - Super silent mode (if your wife does not like the flipping sound ;-))
 
-Build:
+My Build:
 - ESP32 Dev Kit 1.0 - using WiFi to get NTP Time
 - Arduino Nano - controlling the Flip-Dot matrix
 - Flip-Dot controller board by Rainer Radow (radow.org)
-- 16x28 Brose Flip-Dot Matrix (library also works with Krüger Flip-Dot-Matrix)
-- RTC 3231 module 
+- 16x28 Brose Flip-Dot Matrix
+- RTC 3231 module
+- Very fleixible library works with all sizes of displays and other brands such as Krüger
 
 Settings.h includes all individal settings. 
 Including <Timezone.h> for calculating the right timezone including global DST settings (https://github.com/JChristensen/Timezone).
