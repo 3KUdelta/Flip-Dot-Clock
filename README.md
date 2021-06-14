@@ -31,10 +31,13 @@ Print the stand yourself: (https://)
 
 [![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084328.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
+[![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/VID_20210609_155916%7E2.mov)](https://github.com/3KUdelta/Flip-Dot-Clock)
+
 [![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084238.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
 [![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/IMG_20210614_084258.jpg)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
+Serial transfer of precise time every minute.
 [![Flip-Dot-Clock](https://github.com/3KUdelta/Flip-Dot-Clock/blob/main/Pics/VID_20210608_193220%7E2.mov)](https://github.com/3KUdelta/Flip-Dot-Clock)
 
 
