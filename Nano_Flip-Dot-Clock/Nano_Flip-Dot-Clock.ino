@@ -4,8 +4,8 @@
 //
 // c by Rainer Radow, 30171 Hannover, Germany
 // radow.org
-// This file is for your Nano.
-// Pairing file on ESP32: ESP32_Flip-Dot-Clock.ino
+//
+// Pairing file on ESP32: ESP32_wwFlipGFX-scrolling_clock_ng.ino
 //
 // June 2021: addons by Marc Stähli
 // - precise time fetch via NTP on connected ESP32
@@ -78,10 +78,10 @@ void loop() {
   bool flipsomedots = false;                   // update flag switch back
   t2 = millis();
 
-  if ( t2 >= t1 + 120000)                      // all 2 mintes move all dots on the matrix
-  {                                            // to prevent "hanging" dots
-    t1 = t2;
+  if ( t2 >= t1 + 120000) {                    // all 2 mintes move all dots on the matrix
+    t1 = t2;                                   // to prevent "hanging" dot
     invert(2);
+    vertical(1);
   }
 
   if (inbound.parseStream(&Serial))  {          // any data on serial port available?
@@ -90,23 +90,23 @@ void loop() {
     if (inbound.fullMatch("update")) {          // successful NTP data fetch = updating time
       byte comflag = inbound.nextByte();
       long ntp_time = inbound.nextLong();
-
+      watchdog = millis();                      // set watchdog to now because we have a inbound message
       if (comflag == 1) {
         setTime(ntp_time);                      // update time in Nano RTC with received time
         rtc_3231.adjust(DateTime(ntp_time));    // update time in 3231 RTC with received time
-        vertical(2);
         nowifi = false;
         nontp = false;
-        watchdog = millis();
       }
       if (comflag == 2) {                       // no WiFi signal
         vertical(1);
         scrolltext("no WiFi");
+        invert(1);
         nowifi = true;
       }
       if (comflag == 3) {                       // no NTP signal
         vertical(1);
         scrolltext("no NTP");
+        invert(1);
         nontp = true;
       }
     }
@@ -119,7 +119,7 @@ void loop() {
 
     if (showblinkingcolon)
       flipsomedots = true;                      // set update flag if colon should blink
-      
+
     if (showsecondsline)
       flipsomedots = true;                      // set update flag if line should be displayed
 
@@ -129,9 +129,10 @@ void loop() {
     }
   }
 
-  if (millis() - watchdog > 180000) {           // no Wifi after 3 minutes?
+  if (millis() - watchdog > 180000) {           // no connection to ESP32 after 3 minutes?
     vertical(1);
-    scrolltext("no WiFi");
+    invert(1);
+    scrolltext("no con");
     nowifi = true;
     watchdog = millis();
     flipsomedots = true;
@@ -139,31 +140,38 @@ void loop() {
 
   // *********** funny messages during the day **************************************
   if (hour(now()) == 8 && (minute(now()) == 15) && (second(now()) == 0)) {
-    vertical(2);
+    vertical(1);
+    invert(1);
     scrolltext("tired?");
   }
   if (hour(now()) == 10 && (minute(now()) == 14) && (second(now()) == 0)) {
-    vertical(2);
+    vertical(1);
+    invert(1);
     scrolltext("happy?");
   }
   if (hour(now()) == 11 && (minute(now()) == 54) && (second(now()) == 0)) {
-    vertical(2);
+    vertical(1);
+    invert(1);
     scrolltext("hungry?");
   }
   if (hour(now()) == 14 && (minute(now()) == 10) && (second(now()) == 0)) {
-    vertical(2);
+    vertical(1);
+    invert(1);
     scrolltext("bored?");
   }
   if (hour(now()) == 16 && (minute(now()) == 50) && (second(now()) == 0)) {
-    vertical(2);
+    vertical(1);
+    invert(1);
     scrolltext("Beer?");
   }
   if (hour(now()) == 22 && (minute(now()) == 40) && (second(now()) == 0)) {
-    vertical(2);
+    vertical(1);
+    invert(1);
     scrolltext("sleepy?");
   }
   if (hour(now()) == 23 && (minute(now()) == 55) && (second(now()) == 0)) {
-    vertical(2);
+    vertical(1);
+    invert(1);
     scrolltext("Bed?");
   }
   //***********************************************************************************
@@ -226,17 +234,17 @@ void updatedisplay() {
 
   if (showsecondsline) {
     uint8_t s = 0;
-    while (s < second(now())){
-      flipdot.mSetDot(s++/2, 16);
+    while (s < second(now())) {
+      flipdot.mSetDot(s++ / 2, 16);
     }
   }
   if (second(now()) == 59) {
     uint8_t s = 1;
-    while (s < 29){
+    while (s < 29) {
       flipdot.mResetDot(s++, 16);
     }
   }
-  
+
   flipdot.mDrawDigit(COLUMNH10, ROW1, hour10);   // re-fill numbers into matrix in case of error messages
   flipdot.mDrawDigit(COLUMNH01, ROW1, hour01);
   flipdot.mDrawDigit(COLUMNM10, ROW1, minute10);
