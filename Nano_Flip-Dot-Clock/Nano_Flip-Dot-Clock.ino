@@ -42,6 +42,14 @@ int lastminute = 61;
 long t1, t2;                            // timing variables
 long watchdog;                          // watchdog for WiFi availability
 
+// where do you want to place our time xx:xx in the matrix?
+const uint8_t ROW1 = 5;
+const uint8_t COLUMNH10 = 4;  // hours 1x
+const uint8_t COLUMNH01 = 9;  // hours x1
+const uint8_t COLON = 14;     // colon
+const uint8_t COLUMNM10 = 16; // minutes 1x
+const uint8_t COLUMNM01 = 21; // minute x1
+
 void setup() {
 
   Serial.begin(9600);                   // going low speed, simple data transmission
@@ -68,7 +76,7 @@ void setup() {
   // ************************************************************************************
   setTime(rtc_3231.now().unixtime());          // write time stored in ds3231 to Nano RTC
   vertical(2);                                 // vertical scroll though the dots to avoid "hanging" dots, 2 runs
-  invert(1);                                   // inverting scroll through, 1 run
+  invert(2);                                   // inverting scroll through, x runs
   t1 = millis();                               // t1 is used to do timed display movement
   watchdog = millis();                         // watchdog to see if WiFi is alive
 }
@@ -80,8 +88,9 @@ void loop() {
 
   if ( t2 >= t1 + 120000) {                    // all 2 mintes move all dots on the matrix
     t1 = t2;                                   // to prevent "hanging" dot
-    invert(2);
-    vertical(1);
+ //   invert(2);
+ //   vertical(1);
+    shuffle();
   }
 
   if (inbound.parseStream(&Serial))  {          // any data on serial port available?
@@ -181,13 +190,6 @@ void loop() {
 }
 
 void updatedisplay() {
-  // where do you want to place our time xx:xx in the matrix?
-  const uint8_t ROW1 = 5;
-  const uint8_t COLUMNH10 = 4;  // hours 1x
-  const uint8_t COLUMNH01 = 9;  // hours x1
-  const uint8_t COLON = 14;     // colon
-  const uint8_t COLUMNM10 = 16; // minutes 1x
-  const uint8_t COLUMNM01 = 21; // minute x1
 
   static uint8_t hour10old = 10, hour01old = 10, minute10old = 10, minute01old = 10;  // for HORIZONTAL only
   uint8_t hour10, hour01, minute10, minute01;  // for HORIZONTAL only
@@ -315,5 +317,36 @@ void scrolltext(String message) {
     while (millis() - startingtime < switchingtime);  // wait for the necessary switching time
   }
   flipdot.setCoilFlipDuration(1000);
+  flipdot.dotPowerOff();
+}
+
+void shuffle() {
+  unsigned int col;
+  flipdot.dotPowerOn();                       // once a while keep the dots flying to avoid "hanging" dots
+  delay(30);
+  flipdot.mSetFont(wwFont_4x7_fix_v02);       // set the font
+  flipdot.mScrollSpace(0);                    // set the dots space between scrolling points
+  flipdot.mScrollDirection(flipdot.DOWN);
+
+  for (int x = 1; x < 100; x = x + 5) {
+
+    switch (random(4)) {
+      case 0:
+        col = COLUMNM01;
+        break;
+      case 1:
+        col = COLUMNM10;
+        break;
+      case 2:
+        col = COLUMNH01;
+        break;
+      case 3:
+        col = COLUMNH10;
+        break;
+    }
+    flipdot.mScrollDelay(x);                   // scroll delay in ms
+    flipdot.mScrollDigit(col, ROW1, random(9), random(9));
+  }
+  flipdot.mReset();
   flipdot.dotPowerOff();
 }
