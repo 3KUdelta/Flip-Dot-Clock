@@ -41,6 +41,8 @@ int lastsecond = 61;
 int lastminute = 61;
 long t1, t2;                            // timing variables
 long watchdog;                          // watchdog for WiFi availability
+uint8_t hour10, hour01, minute10, minute01;
+
 
 // where do you want to place our time xx:xx in the matrix?
 const uint8_t ROW1 = 5;
@@ -88,8 +90,8 @@ void loop() {
 
   if ( t2 >= t1 + 120000) {                    // all 2 mintes move all dots on the matrix
     t1 = t2;                                   // to prevent "hanging" dot
- //   invert(2);
- //   vertical(1);
+    //   invert(2);
+    //   vertical(1);
     shuffle();
   }
 
@@ -192,7 +194,6 @@ void loop() {
 void updatedisplay() {
 
   static uint8_t hour10old = 10, hour01old = 10, minute10old = 10, minute01old = 10;  // for HORIZONTAL only
-  uint8_t hour10, hour01, minute10, minute01;  // for HORIZONTAL only
 
   flipdot.dotPowerOn();                        // giving power to the dot matrix
   delay(30);
@@ -347,6 +348,12 @@ void shuffle() {
     flipdot.mScrollDelay(x);                   // scroll delay in ms
     flipdot.mScrollDigit(col, ROW1, random(9), random(9));
   }
-  flipdot.mReset();
+
+  // after shuffling make a smooth transition to the realtime again
+  flipdot.mScrollDigit(COLUMNM10, ROW1, 2, minute10);
+  flipdot.mScrollDigit(COLUMNH10, ROW1, 2, hour10);
+  flipdot.mScrollDigit(COLUMNM01, ROW1, 5, minute01);
+  flipdot.mScrollDigit(COLUMNH01, ROW1, 8, hour01);
+  
   flipdot.dotPowerOff();
 }
