@@ -26,6 +26,7 @@ My Build:
 - Flip-Dot controller board by Rainer Radow (radow.org)
 - 16x28 Brose Flip-Dot Matrix
 - RTC 3231 module
+- PIR Sensor - switching display off after 2 minutes no movement
 - Very fleixible library works with all sizes of displays and other brands such as Krüger
 
 Settings.h for the ESP32 includes all individal settings. 
