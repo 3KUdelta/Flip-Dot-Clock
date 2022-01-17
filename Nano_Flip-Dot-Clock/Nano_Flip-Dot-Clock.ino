@@ -13,6 +13,7 @@
 // - serial transfer of data to this sketch
 // - sending status messages -> 1 = success, 2 = no WiFi, 3 = no NTP
 // - dot top left indicates no WiFi, dot top right indicates no NTP
+// - 09.12.21 added PIR sensor to switch off display if no movement after 2 minutes
 //
 // Arduino settings: Arduino Nano, "ATmega328P (Old Bootloader), your port
 //
@@ -30,6 +31,7 @@ wwFlipGFX flipdot;                      // Flip Dot initialization
 RTC_DS3231 rtc_3231;                    // ds3231 RTC initialization
 AsciiMassageParser inbound;             // initializing inbound parser
 
+int pirSensor = 4;                      // Pin, where PIR sensor is connected
 bool showblinkingcolon = false;         // define if you want blinking dots
 bool showsecondsline = true;            // define if you want to see the seconds progress line
 
@@ -42,7 +44,9 @@ int lastminute = 61;
 long t1, t2;                            // timing variables
 long watchdog;                          // watchdog for WiFi availability
 uint8_t hour10, hour01, minute10, minute01;
-
+unsigned long timebuffer;
+bool awake = true;
+bool didsleep = false;
 
 // where do you want to place our time xx:xx in the matrix?
 const uint8_t ROW1 = 5;
@@ -86,10 +90,36 @@ void setup() {
 void loop() {
 
   bool flipsomedots = false;                   // update flag switch back
+
+  if (digitalRead(pirSensor) == 1) {             // PIR Sensor activated --> timer gets started
+    timebuffer = millis();
+  }
+
+  if (millis() - timebuffer < 120000) {         // After movement, display remains on for 2 minutes = 120000 ms
+    awake = true;
+    if (didsleep) {
+      flipsomedots = true;
+    }
+    didsleep = false;
+  }
+  else {
+    awake = false;
+    if (!didsleep) {                               // let this run only once
+      flipdot.dotPowerOn();                        // giving power to the dot matrix
+      delay(30);
+      flipdot.mReset();
+      flipdot.mResetold();
+      flipdot.resetAll(0);                         // flipping all dots to off with 0 delay
+      delay(100);
+      flipdot.dotPowerOff();                       // power matrix down until wakeup
+    }
+    didsleep = true;
+  }
+
   t2 = millis();
 
-  if ( t2 >= t1 + 120000) {                    // all 2 mintes move all dots on the matrix
-    t1 = t2;                                   // to prevent "hanging" dot
+  if ( t2 >= t1 + 120000) {                     // all 2 mintes move all dots on the matrix
+    t1 = t2;                                    // to prevent "hanging" dot
     //   invert(2);
     //   vertical(1);
     shuffle();
@@ -115,9 +145,9 @@ void loop() {
         nowifi = true;
       }
       if (comflag == 3) {                       // no NTP signal
-        vertical(1);
-        scrolltext("no NTP");
-        invert(1);
+        // vertical(1);
+        // scrolltext("no NTP");
+        // invert(1);
         nontp = true;
       }
     }
@@ -178,7 +208,7 @@ void loop() {
   if (hour(now()) == 22 && (minute(now()) == 40) && (second(now()) == 0)) {
     vertical(1);
     invert(1);
-    scrolltext("sleepy?");
+    scrolltext("ru sleepy?");
   }
   if (hour(now()) == 23 && (minute(now()) == 55) && (second(now()) == 0)) {
     vertical(1);
@@ -193,167 +223,185 @@ void loop() {
 
 void updatedisplay() {
 
-  static uint8_t hour10old = 10, hour01old = 10, minute10old = 10, minute01old = 10;  // for HORIZONTAL only
+  if (awake) {
 
-  flipdot.dotPowerOn();                        // giving power to the dot matrix
-  delay(30);
+    static uint8_t hour10old = 10, hour01old = 10, minute10old = 10, minute01old = 10;  // for HORIZONTAL only
 
-  flipdot.mSetFont(wwFont_4x7_fix_v02);       // set the font
-  flipdot.mScrollDirection(flipdot.UP);       // set number's scroll direction
-  flipdot.mScrollDelay(60);                   // scroll delay in ms
-  flipdot.mScrollSpace(2);                    // set the dots space between scrolling points
-  setTime(rtc_3231.now().unixtime());         // syncing Nano RTC with ds3231
-  hour10 = hour(now()) / 10;
-  hour01 = hour(now()) % 10;
-  minute10 = minute(now()) / 10;
-  minute01 = minute(now()) % 10;
+    flipdot.dotPowerOn();                        // giving power to the dot matrix
+    delay(30);
 
-  // ---- Numbers ------------------------
-  if (minute01 != minute01old) {
-    flipdot.mScrollDigit(COLUMNM01, ROW1, minute01old, minute01);
-    minute01old = minute01;
-    if (minute10 != minute10old) {
-      flipdot.mScrollDigit(COLUMNM10, ROW1, minute10old, minute10);
-      minute10old = minute10;
-      if (hour01 != hour01old) {
-        flipdot.mScrollDigit(COLUMNH01, ROW1, hour01old, hour01);
-        hour01old = hour01;
-        if (hour10 != hour10old) {
-          flipdot.mScrollDigit(COLUMNH10, ROW1, hour10old, hour10);
-          hour10old = hour10;
+    flipdot.mSetFont(wwFont_4x7_fix_v02);       // set the font
+    flipdot.mScrollDirection(flipdot.UP);       // set number's scroll direction
+    flipdot.mScrollDelay(60);                   // scroll delay in ms
+    flipdot.mScrollSpace(2);                    // set the dots space between scrolling points
+
+    setTime(rtc_3231.now().unixtime());         // syncing Nano RTC with ds3231
+
+    hour10 = hour(now()) / 10;
+    hour01 = hour(now()) % 10;
+    minute10 = minute(now()) / 10;
+    minute01 = minute(now()) % 10;
+
+    // ---- Numbers ------------------------
+    if (minute01 != minute01old) {
+      flipdot.mScrollDigit(COLUMNM01, ROW1, minute01old, minute01);
+      minute01old = minute01;
+      if (minute10 != minute10old) {
+        flipdot.mScrollDigit(COLUMNM10, ROW1, minute10old, minute10);
+        minute10old = minute10;
+        if (hour01 != hour01old) {
+          flipdot.mScrollDigit(COLUMNH01, ROW1, hour01old, hour01);
+          hour01old = hour01;
+          if (hour10 != hour10old) {
+            flipdot.mScrollDigit(COLUMNH10, ROW1, hour10old, hour10);
+            hour10old = hour10;
+          }
         }
       }
     }
-  }
 
-  if (showblinkingcolon) {                       // ---- blinking colon ----
-    if (colon)
-      flipdot.mDrawString(COLON, ROW1, ":");
-    else
-      flipdot.mEraseVerticalLine(COLON, ROW1, 7);
-    colon = !colon;
-  }
-  else flipdot.mDrawString(COLON, ROW1, ":");
-
-  if (showsecondsline) {
-    uint8_t s = 0;
-    while (s < second(now())) {
-      flipdot.mSetDot(s++ / 2, 16);
+    if (showblinkingcolon) {                       // ---- blinking colon ----
+      if (colon)
+        flipdot.mDrawString(COLON, ROW1, ":");
+      else
+        flipdot.mEraseVerticalLine(COLON, ROW1, 7);
+      colon = !colon;
     }
-  }
-  if (second(now()) == 59) {
-    uint8_t s = 1;
-    while (s < 29) {
-      flipdot.mResetDot(s++, 16);
+    else flipdot.mDrawString(COLON, ROW1, ":");
+
+    if (showsecondsline) {
+      uint8_t s = 0;
+      while (s < second(now())) {
+        flipdot.mSetDot(s++ / 2, 16);
+      }
     }
+    if (second(now()) == 59) {
+      uint8_t s = 1;
+      while (s < 29) {
+        flipdot.mResetDot(s++, 16);
+      }
+    }
+
+    flipdot.mDrawString(COLON, ROW1, ":");
+    flipdot.mDrawDigit(COLUMNH10, ROW1, hour10);   // re-fill numbers into matrix in case of error messages
+    flipdot.mDrawDigit(COLUMNH01, ROW1, hour01);
+    flipdot.mDrawDigit(COLUMNM10, ROW1, minute10);
+    flipdot.mDrawDigit(COLUMNM01, ROW1, minute01);
+
+    if (nowifi) flipdot.mSetDot(1, 1);            // set dot in top left corner to indcate "no WiFi"
+    else        flipdot.mResetDot(1, 1);          // erase dot in top left corner to indcate WiFi ok
+
+    if (nontp)  flipdot.mSetDot(28, 1);           // set dot in top right corner to indcate "no NTP"
+    else        flipdot.mResetDot(28, 1);         // erase dot in top right corner (NTP is online)
+
+    flipdot.mUpdate();
+
+    delay(100);
+    flipdot.dotPowerOff();                         // power matrix down until next update
   }
-
-  flipdot.mDrawDigit(COLUMNH10, ROW1, hour10);   // re-fill numbers into matrix in case of error messages
-  flipdot.mDrawDigit(COLUMNH01, ROW1, hour01);
-  flipdot.mDrawDigit(COLUMNM10, ROW1, minute10);
-  flipdot.mDrawDigit(COLUMNM01, ROW1, minute01);
-
-  if (nowifi) flipdot.mSetDot(1, 1);            // set dot in top left corner to indcate "no WiFi"
-  else        flipdot.mResetDot(1, 1);          // erase dot in top left corner to indcate WiFi ok
-
-  if (nontp)  flipdot.mSetDot(28, 1);           // set dot in top right corner to indcate "no NTP"
-  else        flipdot.mResetDot(28, 1);         // erase dot in top right corner (NTP is online)
-
-  flipdot.mUpdate();
-  delay(100);
-  flipdot.dotPowerOff();                         // power matrix down until next update
 }
 
 void invert(unsigned int loops) {
-  flipdot.dotPowerOn();                         // once a while keep the dots flying to avoid "hanging" dots
-  delay(30);
-  for (uint8_t l = 0; l < loops; l++) {
-    flipdot.mInvert();
-    flipdot.mUpdate();
-    flipdot.mInvert();
-    flipdot.mUpdate();
+
+  if (awake) {
+    flipdot.dotPowerOn();                         // once a while keep the dots flying to avoid "hanging" dots
+    delay(30);
+    for (uint8_t l = 0; l < loops; l++) {
+      flipdot.mInvert();
+      flipdot.mUpdate();
+      flipdot.mInvert();
+      flipdot.mUpdate();
+    }
+    flipdot.dotPowerOff();
   }
-  flipdot.dotPowerOff();
 }
 
 void vertical(unsigned int loops) {
-  flipdot.dotPowerOn();                         // once a while keep the dots flying to avoid "hanging" dots
-  delay(30);
-  for (uint8_t l = 0; l < loops; l++) {
-    for (uint8_t y = 1; y <= YCOUNTPERMODULE; y++) {
-      for (uint8_t x = 1; x <= XCOUNTPERMODULE ; x++) {
-        flipdot.mSetDot(x, y);
-        flipdot.mUpdate();
-        delay(0);
+
+  if (awake) {
+    flipdot.dotPowerOn();                         // once a while keep the dots flying to avoid "hanging" dots
+    delay(30);
+    for (uint8_t l = 0; l < loops; l++) {
+      for (uint8_t y = 1; y <= YCOUNTPERMODULE; y++) {
+        for (uint8_t x = 1; x <= XCOUNTPERMODULE ; x++) {
+          flipdot.mSetDot(x, y);
+          flipdot.mUpdate();
+          delay(0);
+        }
+      }
+      for (uint8_t y = 1; y <= YCOUNTPERMODULE; y++) {
+        for (uint8_t x = 1; x <= XCOUNTPERMODULE ; x++) {
+          flipdot.mResetDot(x, y);
+          flipdot.mUpdate();
+          delay(0);
+        }
       }
     }
-    for (uint8_t y = 1; y <= YCOUNTPERMODULE; y++) {
-      for (uint8_t x = 1; x <= XCOUNTPERMODULE ; x++) {
-        flipdot.mResetDot(x, y);
-        flipdot.mUpdate();
-        delay(0);
-      }
-    }
+    flipdot.dotPowerOff();
   }
-  flipdot.dotPowerOff();
 }
 
 void scrolltext(String message) {
 
-  uint32_t startingtime;
-  uint16_t switchingtime = 90;                       // minimal refresh time for a smooth scrolling
+  if (awake) {
+    uint32_t startingtime;
+    uint16_t switchingtime = 90;                       // minimal refresh time for a smooth scrolling
 
-  flipdot.dotPowerOn();
-  delay(30);
-  flipdot.setCoilFlipDuration(500);
-  flipdot.mSetCharSpace(2);
-  flipdot.mSetFont(dotFont_01_v02);
-  int length = flipdot.getStringWidth(message);
+    flipdot.dotPowerOn();
+    delay(30);
+    flipdot.setCoilFlipDuration(500);
+    flipdot.mSetCharSpace(2);
+    flipdot.mSetFont(dotFont_01_v02);
+    int length = flipdot.getStringWidth(message);
 
-  for (int x = 14; x > length * -1; x--) {
-    startingtime = millis();
-    flipdot.mReset();
-    flipdot.mDrawString(x, 1, message);
-    flipdot.mUpdate();
-    while (millis() - startingtime < switchingtime);  // wait for the necessary switching time
+    for (int x = 14; x > length * -1; x--) {
+      startingtime = millis();
+      flipdot.mReset();
+      flipdot.mDrawString(x, 1, message);
+      flipdot.mUpdate();
+      while (millis() - startingtime < switchingtime);  // wait for the necessary switching time
+    }
+    flipdot.setCoilFlipDuration(1000);
+    flipdot.dotPowerOff();
   }
-  flipdot.setCoilFlipDuration(1000);
-  flipdot.dotPowerOff();
 }
 
 void shuffle() {
-  unsigned int col;
-  flipdot.dotPowerOn();                       // once a while keep the dots flying to avoid "hanging" dots
-  delay(30);
-  flipdot.mSetFont(wwFont_4x7_fix_v02);       // set the font
-  flipdot.mScrollSpace(0);                    // set the dots space between scrolling points
-  flipdot.mScrollDirection(flipdot.DOWN);
 
-  for (int x = 1; x < 100; x = x + 5) {
+  if (awake) {
+    unsigned int col;
+    flipdot.dotPowerOn();                       // once a while keep the dots flying to avoid "hanging" dots
+    delay(30);
+    flipdot.mSetFont(wwFont_4x7_fix_v02);       // set the font
+    flipdot.mScrollSpace(0);                    // set the dots space between scrolling points
+    flipdot.mScrollDirection(flipdot.DOWN);
 
-    switch (random(4)) {
-      case 0:
-        col = COLUMNM01;
-        break;
-      case 1:
-        col = COLUMNM10;
-        break;
-      case 2:
-        col = COLUMNH01;
-        break;
-      case 3:
-        col = COLUMNH10;
-        break;
+    for (int x = 1; x < 100; x = x + 5) {
+
+      switch (random(4)) {
+        case 0:
+          col = COLUMNM01;
+          break;
+        case 1:
+          col = COLUMNM10;
+          break;
+        case 2:
+          col = COLUMNH01;
+          break;
+        case 3:
+          col = COLUMNH10;
+          break;
+      }
+      flipdot.mScrollDelay(x);                   // scroll delay in ms
+      flipdot.mScrollDigit(col, ROW1, random(9), random(9));
     }
-    flipdot.mScrollDelay(x);                   // scroll delay in ms
-    flipdot.mScrollDigit(col, ROW1, random(9), random(9));
-  }
 
-  // after shuffling make a smooth transition to the realtime again
-  flipdot.mScrollDigit(COLUMNM10, ROW1, 2, minute10);
-  flipdot.mScrollDigit(COLUMNH10, ROW1, 2, hour10);
-  flipdot.mScrollDigit(COLUMNM01, ROW1, 5, minute01);
-  flipdot.mScrollDigit(COLUMNH01, ROW1, 8, hour01);
-  
-  flipdot.dotPowerOff();
+    // after shuffling make a smooth transition to the realtime again
+    flipdot.mScrollDigit(COLUMNM10, ROW1, 2, minute10);
+    flipdot.mScrollDigit(COLUMNH10, ROW1, 2, hour10);
+    flipdot.mScrollDigit(COLUMNM01, ROW1, 5, minute01);
+    flipdot.mScrollDigit(COLUMNH01, ROW1, 8, hour01);
+
+    flipdot.dotPowerOff();
+  }
 }
